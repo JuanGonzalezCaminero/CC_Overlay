@@ -1,0 +1,53 @@
+
+Ejercicio 1:
+Tenemos que crear los contenedores sin red, es decir, con la opción --network none.
+Esto quiere decir que el contenedor no estará asociado a ningún namespace de red, por 
+tanto, tenemos que meterlo nosotros en uno de los que podemos crear con iproute2.
+
+Un contenedor de docker es un grupo de procesos aislados del resto del sistema a través 
+de cgroups. Cada proceso está en una serie de namespaces (de usuario, de pid, de red...) 
+el objetivo es meter estos contenedores en el namespace de red que queramos.
+
+Cada proceso tiene en /proc/[pid]/ns una serie de links simbólicos que indican los namespaces 
+en los que está el proceso (Si haces ls -l te indica los descriptores de fichero de los 
+ficheros a los que apuntan esos enlaces, parece que lo que importa es ese File descriptor, y 
+no lo que haya en el fichero al que estás apuntando). Por defecto, cualquier proceso que se 
+crea estará en los namespaces por defecto.
+
+Referencia:
+https://man7.org/linux/man-pages/man7/namespaces.7.html
+
+https://man7.org/linux/man-pages/man7/network_namespaces.7.html
+
+En concreto, nos interesa /proc/[pid]/ns/net
+
+Podemos ver en https://man7.org/linux/man-pages/man8/ip-netns.8.html, que los namespaces creados 
+con ip netns add NAME se crean en /var/run/netns
+
+Según https://www.boynux.com/advanced-docker-networking/ para meter un contenedor en un namespace 
+de red bastará con asignarle ese namespace al main process del contenedor, cuyo PID podemos obtener 
+con docker inspect (y filtrando el resultado con -f '{{.State.Pid}}'). Esto tiene sentido ya que 
+en principio el namespace de los hijos de este proceso será el mismo, pero no tengo claro lo que 
+significa para procesos ya en ejecución.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

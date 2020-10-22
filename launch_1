@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#Clean previous namespaces
+ip netns delete container_1
+ip netns delete container_2
+
+#Add a namespace for each container
+ip netns add container_1
+ip netns add container_2
+
+#Output changes
+echo "Created network namespaces for each container"
+ip netns list
+
+#Add 
