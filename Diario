@@ -30,9 +30,9 @@ con docker inspect (y filtrando el resultado con -f '{{.State.Pid}}'). Esto tien
 en principio el namespace de los hijos de este proceso será el mismo, pero no tengo claro lo que 
 significa para procesos ya en ejecución.
 
-
-
-
+La idea no es crear un namespace con netns, sino coger el namespace que se crea para el contenedor 
+y poner un enlace a ese namespace en /var/run/netns, de esa forma, por un lado sabemos que todos los 
+procesos del contenedor están en el namespace, y podemos modificar el namespace con iproute2.
 
 
 
