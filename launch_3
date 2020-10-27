@@ -1,0 +1,228 @@
+#!/bin/bash
+
+#Disable iptables calls from bridges
+echo 0 > /proc/sys/net/bridge/bridge-nf-call-iptables 
+
+#Clean previous containers
+docker container stop ubuntu_1
+docker container rm ubuntu_1
+docker container stop ubuntu_2
+docker container rm ubuntu_2
+
+#Create containers (ubuntu_practica is a normal ubuntu image plus iproute2 and ping)
+docker run --name ubuntu_1 -d -it --network none ubuntu_practica
+docker run --name ubuntu_2 -d -it --network none ubuntu_practica
+
+#Output changes
+echo -e "\e[30;48;5;87m \e[1m "Created containers"\x1b[K\e[0m"
+docker container ls
+
+#Clean previous namespaces
+ip netns delete container_1
+ip netns delete container_2
+ip netns delete bridge_0
+
+#Add a namespace for each container in the netns folder by adding a symlink in that 
+#folder to the network namespace of each container
+mkdir -p /var/run/netns/
+container_pid="$(docker inspect ubuntu_1 -f '{{.State.Pid}}')"
+ln -sf /proc/$container_pid/ns/net /var/run/netns/container_1
+container_pid="$(docker inspect ubuntu_2 -f '{{.State.Pid}}')"
+ln -sf /proc/$container_pid/ns/net /var/run/netns/container_2
+
+ip netns add bridge_0
+#ip netns add container_1
+#ip netns add container_2
+
+#Output changes
+echo -e "\e[30;48;5;87m \e[1m "Created network namespaces for each container and for the bridge"\x1b[K\e[0m"
+ip netns list
+
+#Create bridge
+ip link add name br0 netns bridge_0 type bridge
+ip netns exec bridge_0 ip link set br0 up
+
+#Clean interfaces in host namespace
+ip link del veth0
+
+#Create veth links
+#Between the containers and the bridge
+ip link add veth0 netns container_1 type veth peer name br0veth0 netns bridge_0
+ip link add veth0 netns container_2 type veth peer name br0veth1 netns bridge_0
+#Between the bridge and the host
+ip link add veth0 type veth peer name br0veth2 netns bridge_0
+
+#Assign the interfaces to the bridge
+ip netns exec bridge_0 ip link set br0veth0 master br0
+ip netns exec bridge_0 ip link set br0veth1 master br0
+ip netns exec bridge_0 ip link set br0veth2 master br0
+
+#Output changes
+echo -e "\e[30;48;5;87m \e[1m "Created bridge and veth links with the containers and with the host"\x1b[K\e[0m"
+echo -e "\e[30;48;5;209m \e[1m "Host:"\x1b[K\e[0m"
+ip addr show dev veth0
+echo -e "\e[30;48;5;209m \e[1m "Container 1:"\x1b[K\e[0m"
+ip netns exec container_1 ip addr show dev veth0
+echo -e "\e[30;48;5;209m \e[1m "Container 2:"\x1b[K\e[0m"
+ip netns exec container_2 ip addr show dev veth0
+echo -e "\e[30;48;5;209m \e[1m "Bridge:"\x1b[K\e[0m"
+ip netns exec bridge_0 bridge link show master br0
+
+#Assign an IP address to each interface
+#In the containers
+ip netns exec container_1 ip address add 192.168.2.1/24 dev veth0 
+ip netns exec container_2 ip address add 192.168.2.2/24 dev veth0
+#In the host
+ip address add 192.168.2.3/24 dev veth0
+
+#Activate the interfaces
+ip netns exec container_1 ip link set dev veth0 up
+ip netns exec container_2 ip link set dev veth0 up
+ip link set dev veth0 up
+ip netns exec bridge_0 ip link set dev br0veth0 up
+ip netns exec bridge_0 ip link set dev br0veth1 up
+ip netns exec bridge_0 ip link set dev br0veth2 up
+
+#Output changes
+echo -e "\e[30;48;5;87m \e[1m "Activated the interfaces and assigned addresses"\x1b[K\e[0m"
+echo -e "\e[30;48;5;209m \e[1m "Host:"\x1b[K\e[0m"
+ip addr show dev veth0
+echo -e "\e[30;48;5;209m \e[1m "Container 1:"\x1b[K\e[0m"
+ip netns exec container_1 ip addr show dev veth0
+echo -e "\e[30;48;5;209m \e[1m "Container 2:"\x1b[K\e[0m"
+ip netns exec container_2 ip addr show dev veth0
+echo -e "\e[30;48;5;209m \e[1m "Bridge:"\x1b[K\e[0m"
+ip netns exec bridge_0 ip addr show dev br0veth0
+ip netns exec bridge_0 ip addr show dev br0veth1
+ip netns exec bridge_0 ip addr show dev br0veth2
+
+#Add the host as default gateway for the containers
+ip netns exec container_1 ip route add default via 192.168.2.3 dev veth0
+ip netns exec container_2 ip route add default via 192.168.2.3 dev veth0
+
+ip route add 192.168.2.0/24 via 192.168.2.3 dev veth0
+#ip route add 192.168.3.0/24 via 192.168.4.1 dev veth0
+
+#Show routing tables
+echo -e "\e[30;48;5;87m \e[1m "Set the host as the default gateway for the containers"\x1b[K\e[0m"
+echo -e "\e[30;48;5;209m \e[1m "Host:"\x1b[K\e[0m"
+ip route
+echo -e "\e[30;48;5;209m \e[1m "Container 1:"\x1b[K\e[0m"
+ip netns exec container_1 ip route
+echo -e "\e[30;48;5;209m \e[1m "Container 2:"\x1b[K\e[0m"
+ip netns exec container_2 ip route
+
+#Start iptables (ONLY SYSTEMD)
+systemctl start iptables
+
+#Enable forwarding in the kernel
+echo 1 > /proc/sys/net/ipv4/ip_forward
+
+#Reset all iptables rules to default
+#If no other table is specified, iptables commands affect the filter table
+iptables -t filter -F INPUT
+iptables -t filter -F FORWARD
+iptables -t filter -F OUTPUT
+#iptables -t filter -X
+iptables -t nat -F PREROUTING
+iptables -t nat -F INPUT
+iptables -t nat -F OUTPUT
+iptables -t nat -F POSTROUTING
+#iptables -t nat -X
+iptables -t mangle -F PREROUTING
+iptables -t mangle -F INPUT
+iptables -t mangle -F OUTPUT
+iptables -t mangle -F POSTROUTING
+iptables -t mangle -F FORWARD
+#iptables -t mangle -X
+iptables -t raw -F PREROUTING
+iptables -t raw -F OUTPUT
+#iptables -t raw -X
+iptables -t security -F INPUT
+iptables -t security -F FORWARD
+iptables -t security -F OUTPUT
+#iptables -t security -X
+iptables -P INPUT ACCEPT
+iptables -P FORWARD ACCEPT
+iptables -P OUTPUT ACCEPT
+
+#Show default tables
+echo -e "\e[30;48;5;87m \e[1m "Reset all iptables default tables"\x1b[K\e[0m"
+echo -e "\e[30;48;5;209m \e[1m "Filter table:"\x1b[K\e[0m"
+iptables -vL -t filter
+echo -e "\e[30;48;5;209m \e[1m "Nat table:"\x1b[K\e[0m"
+iptables -vL -t nat
+
+#Get the name of the interface connected to the default gateway
+external=$(ip r | grep default | grep -e"dev [^ ]*" -o | cut -c 5-)
+
+#Establish rules that make the host a router, forwarding packets between the internal interface 
+#connected to the virtual bridge and its external interface
+iptables -t nat -A POSTROUTING -o $external -j MASQUERADE
+iptables -t filter -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+iptables -t filter -A FORWARD -i veth0 -o $external -j ACCEPT
+
+#Show modified tables
+echo -e "\e[30;48;5;87m \e[1m "Established forwarding rules"\x1b[K\e[0m"
+echo -e "\e[30;48;5;209m \e[1m "Filter table:"\x1b[K\e[0m"
+iptables -vL -t filter
+echo -e "\e[30;48;5;209m \e[1m "Nat table:"\x1b[K\e[0m"
+iptables -vL -t nat
+
+#Test outward connectivity
+echo -e "\e[30;48;5;87m \e[1m "Outward connectivity test"\x1b[K\e[0m"
+echo -e "\e[30;48;5;209m \e[1m "Container 1 - google.com"\x1b[K\e[0m"
+docker container exec ubuntu_1 ping -c 4 google.com
+
+echo -e "\e[30;48;5;209m \e[1m "Container 2 - google.com"\x1b[K\e[0m"
+docker container exec ubuntu_2 ping -c 4 google.com
+
+echo -e "\e[30;48;5;209m \e[1m "Container 1 - wikipedia.com"\x1b[K\e[0m"
+docker container exec ubuntu_1 ping -c 4 wikipedia.com
+
+echo -e "\e[30;48;5;209m \e[1m "Container 2 - wikipedia.com"\x1b[K\e[0m"
+docker container exec ubuntu_2 ping -c 4 wikipedia.com
+
+#Open port 80 on both containers
+ip netns exec container_1 iptables -A INPUT -p tcp --dport 80 ACCEPT
+ip netns exec container_2 iptables -A INPUT -p tcp --dport 80 ACCEPT
+
+#Show changes
+echo -e "\e[30;48;5;87m \e[1m "Opened port 80 on both containers"\x1b[K\e[0m"
+echo -e "\e[30;48;5;209m \e[1m "Container 1:"\x1b[K\e[0m"
+sudo ip netns exec container_1 iptables -vL
+echo -e "\e[30;48;5;209m \e[1m "Container 2:"\x1b[K\e[0m"
+sudo ip netns exec container_2 iptables -vL
+
+#Start nginx server on both containers
+echo -e "\e[30;48;5;87m \e[1m "Starting nginx service on both containers"\x1b[K\e[0m"
+docker exec ubuntu_1 service nginx start
+docker exec ubuntu_2 service nginx start
+
+#Forward port 8000 in the host to port 80 in the first container, and port 8080 in the host to 
+#port 80 in the second:
+iptables -A PREROUTING -t nat -i $external -p tcp --dport 8000 -j DNAT --to 192.168.2.1:80
+iptables -A FORWARD -p tcp -d 192.168.2.1 --dport 80 -j ACCEPT
+
+iptables -A PREROUTING -t nat -i $external -p tcp --dport 8080 -j DNAT --to 192.168.2.2:80
+iptables -A FORWARD -p tcp -d 192.168.2.2 --dport 80 -j ACCEPT
+
+#Show changes
+echo -e "\e[30;48;5;87m \e[1m "Forwarded ports 8000 and 8080 to port 80 in containers 1 and 2 respectively"\x1b[K\e[0m"
+echo -e "\e[30;48;5;209m \e[1m "Filter table:"\x1b[K\e[0m"
+iptables -vL -t filter
+echo -e "\e[30;48;5;209m \e[1m "Nat table:"\x1b[K\e[0m"
+iptables -vL -t nat
+
+#Explain usage
+echo -e "\e[30;48;5;87m \e[1m "HTTP requests to the host\'s IP on ports 8000 and 8080 should return the nginx welcome page"\x1b[K\e[0m"
+
+
+
+
+
+#Colors: https://misc.flogisoft.com/bash/tip_colors_and_formatting
+#Whole line: https://unix.stackexchange.com/questions/291852/how-to-\
+#change-the-background-color-for-exactly-one-line (2nd answer)
+#echo -e "\e[30;48;5;87m \e[1m     "$size" "$pyramid" "$iter" "$iters_per_copy"\x1b[K\e[0m"
+
