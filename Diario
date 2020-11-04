@@ -169,9 +169,11 @@ de esto no fuera ACCEPT, habría que aceptar los paquetes a esa IP y puerto manu
 iptables -A FORWARD -p tcp -d 192.168.2.1 --dport 80 -j ACCEPT
 
 
+Ejercicio 4:
 
-
-Para el ejercicio de multiplicación de matrices, qué tamaño de bloque cogemos? y, podemos asumir que el tamaño de la matriz es divisible entre el tamaño de bloque?
+Para que los contenedores en nodos diferentes puedan comunicarse entre sí, tenemos que poner en cada nodo que la ruta 
+hacia un contenedor en otro de los nodos pasa por ese nodo donde están desplegados. Por tanto, una forma no genérica de 
+hacerlo es símplemente poner esa regla de rutado en cada nodo, apuntando al resto de nodos con contenedores.
 
 
 
