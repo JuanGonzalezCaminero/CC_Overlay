@@ -202,16 +202,16 @@ echo -e "\e[30;48;5;209m \e[1m "Container 2 - wikipedia.com"\x1b[K\e[0m"
 docker container exec ubuntu_2 ping -c 4 wikipedia.com
 
 echo -e "\e[30;48;5;87m \e[1m "Container connectivity test"\x1b[K\e[0m"
-echo -e "\e[30;48;5;209m \e[1m "Container 1, Host 2 - Container 1, Host 1 (192.168.2.1)"\x1b[K\e[0m"
+echo -e "\e[30;48;5;209m \e[1m "Container 1, Host 2 - Container 1, Host 1 \(192.168.2.1\("\x1b[K\e[0m"
 docker container exec ubuntu_1 ping -c 4 192.168.2.1
 
-echo -e "\e[30;48;5;209m \e[1m "Container 1, Host 2 - Container 2, Host 1 (192.168.2.1)"\x1b[K\e[0m"
+echo -e "\e[30;48;5;209m \e[1m "Container 1, Host 2 - Container 2, Host 1 \(192.168.2.1\("\x1b[K\e[0m"
 docker container exec ubuntu_1 ping -c 4 192.168.2.2
 
-echo -e "\e[30;48;5;209m \e[1m "Container 2, Host 2 - Container 1, Host 1 (192.168.2.1)"\x1b[K\e[0m"
+echo -e "\e[30;48;5;209m \e[1m "Container 2, Host 2 - Container 1, Host 1 \(192.168.2.1\("\x1b[K\e[0m"
 docker container exec ubuntu_2 ping -c 4 192.168.2.1
 
-echo -e "\e[30;48;5;209m \e[1m "Container 2, Host 2 - Container 2, Host 1 (192.168.2.1)"\x1b[K\e[0m"
+echo -e "\e[30;48;5;209m \e[1m "Container 2, Host 2 - Container 2, Host 1 \(192.168.2.1\("\x1b[K\e[0m"
 docker container exec ubuntu_2 ping -c 4 192.168.2.2
 
 
