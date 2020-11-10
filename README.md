@@ -16,9 +16,15 @@ Todos los contenedores que se lanzan en estos scripts utilizan la opción --netw
 
 
 ### Parte 1
-El objetivo de esta sección es proporcionar una forma de que los contenedores lanzados en un mismo host se pueden comunicar entre sí con protocolos IP.
+El objetivo de esta sección es proporcionar una forma de que los contenedores lanzados en un mismo host se pueden comunicar entre sí con protocolos IP. 
 
-La solución parte del uso de un bridge virtual al que se conecten los contenedores que queramos
+La solución se basa en el uso de un bridge virtual al que se conecten los contenedores que queramos que puedan comunicarse entre sí, esto lo haremos mediante el paquete iproute2.
+
+En este ejemplo, se lanzan dos contenedores, por tanto, tendremos tres espacios de nombres de red, dos para los contenedores y uno para el bridge. Se crean enlaces VETH entre cada uno de los contenedores y el bridge, y se asignan direcciones IP (en la misma subred) a las interfaces de los contenedores. Este esquema muestra las conexiones resultantes y dirección IP de cada interfaz:
+
+ <img src="Images/parte_1.jpg" width="500" />
+
+El script que lanza este escenario 
 
 ---
 
