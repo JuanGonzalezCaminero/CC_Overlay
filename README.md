@@ -1,10 +1,11 @@
 ### Table of Contents
-[Spanish](#Descripción y uso)  
-[English](#Description and usage)
+[Spanish](#spanish)  
+[English](#english)
 
 
-#Descripción y uso
+<a name="spanish"/>
+# Descripción y uso
 
 
-
-#Description and usage
+<a name="english"/>
+# Description and usage
