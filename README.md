@@ -16,6 +16,8 @@ Todos los contenedores que se lanzan en estos scripts utilizan la opción --netw
 
 Por último, cada uno de los scripts lanza el escenario de ejemplo asociado a cada una de las partes descritas en este readme. Los scripts se deben ejecutar con permisos de superusuario para que puedan realizar las operaciones necesarias con iproute2. Los scripts realizan de forma automática una serie de pruebas para comprobar el correcto funcionamiento del escenario, pero en algunos casos en los que no sea posible hacer estas comprobaciones desde la misma máquina que ejecuta el script se indicará al usuario lo que se ha de hacer para comprobar que el comportamiento del sistema desplegado es el esperado.
 
+# 
+
 ### Parte 1
 El objetivo de esta sección es proporcionar una forma de que los contenedores lanzados en un mismo host se pueden comunicar entre sí con protocolos IP. 
 
@@ -29,7 +31,6 @@ El script que lanza este escenario es launch_1.
 
 # 
 
-
 ### Parte 2
 El objetivo de esta sección es ampliar el escenario anterior para permitir comunicaciones entre los contenedores y el host.
 
@@ -40,6 +41,8 @@ A continuación se muestra el sistema descrito:
 <img src="Images/parte_2.jpg" width="500" />
 
 El script que lanza este escenario es launch_2.
+
+# 
 
 ### Parte 3
 El objetivo de esta sección es ampliar el escenario anterior para permitir comunicaciones entre los contenedores y cualquier nodo alcanzable por el host.
@@ -75,6 +78,8 @@ La segunda regla, en la cadena FORWARD de la tabla filter, acepta paquetes dirig
 En el escenario que despliega el script, se redirigen los puertos 8000 y 8080 del host al puerto 80 de los contenedores 1 y 2 respectivamente, permitiendo que desde una máquina externa se acceda a la página de inicio del servidor nginx instalado en los contenedores.
 
 El script que lanza este escenario es launch_3.
+
+# 
 
 ### Parte 4
 El objetivo de esta sección es permitir la comunicación entre contenedores desplegados en distintas máquinas a través de protocolos IP. Se parte de un escenario similar al descrito en la parte 3, aunque sin el port forwarding, ya que no es necesario para este ejemplo.
