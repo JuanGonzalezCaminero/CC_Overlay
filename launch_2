@@ -101,20 +101,27 @@ ip netns exec bridge_0 ip addr show dev br0veth1
 ip netns exec bridge_0 ip addr show dev br0veth2
 
 #Add the host as default gateway for the containers
-ip netns exec container_1 ip route add default via 192.168.2.3 dev veth0
-ip netns exec container_2 ip route add default via 192.168.2.3 dev veth0
+#ip netns exec container_1 ip route add default via 192.168.2.3 dev veth0
+#ip netns exec container_2 ip route add default via 192.168.2.3 dev veth0
 
-ip route add 192.168.2.0/24 via 192.168.2.3 dev veth0
+#ip route add 192.168.2.0/24 via 192.168.2.3 dev veth0
 #ip route add 192.168.3.0/24 via 192.168.4.1 dev veth0
 
 #Show routing tables
-echo -e "\e[30;48;5;87m \e[1m "Set the host as the default gateway for the containers"\x1b[K\e[0m"
+echo -e "\e[30;48;5;87m \e[1m "Routing tables"\x1b[K\e[0m"
 echo -e "\e[30;48;5;209m \e[1m "Host:"\x1b[K\e[0m"
 ip route
 echo -e "\e[30;48;5;209m \e[1m "Container 1:"\x1b[K\e[0m"
 ip netns exec container_1 ip route
 echo -e "\e[30;48;5;209m \e[1m "Container 2:"\x1b[K\e[0m"
 ip netns exec container_2 ip route
+#echo -e "\e[30;48;5;87m \e[1m "Set the host as the default gateway for the containers"\x1b[K\e[0m"
+#echo -e "\e[30;48;5;209m \e[1m "Host:"\x1b[K\e[0m"
+#ip route
+#echo -e "\e[30;48;5;209m \e[1m "Container 1:"\x1b[K\e[0m"
+#ip netns exec container_1 ip route
+#echo -e "\e[30;48;5;209m \e[1m "Container 2:"\x1b[K\e[0m"
+#ip netns exec container_2 ip route
 
 #Test connectivity
 echo -e "\e[30;48;5;87m \e[1m "Connectivity test"\x1b[K\e[0m"
