@@ -25,7 +25,7 @@ La solución se basa en el uso de un bridge virtual al que se conecten los conte
 
 En este ejemplo, se lanzan dos contenedores, por tanto, tendremos tres espacios de nombres de red, dos para los contenedores y uno para el bridge. Se crean enlaces VETH entre cada uno de los contenedores y el bridge, y se asignan direcciones IP (en la misma subred) a las interfaces de los contenedores. Este esquema muestra las conexiones resultantes y dirección IP de cada interfaz:
 
- <img src="Images/parte_1.png" width="800" />
+ <img src="Images/parte_1.png" width="100%" />
 
 El script que lanza este escenario es launch_1.
 
