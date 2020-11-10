@@ -100,7 +100,7 @@ Este es el esquema del sistema descrito:
 
 <img src="Images/parte_4.png" width="100%" />
 
-Una forma de generalizar esto sería utilizar un nodo maestro, que podría ser uno de los hosts que queremos comunicar u otra máquina, la dirección IP de este nodo tendría que ser conocida por todos. Cuando un host quisiera incorporarse a la red, y permitir que sus contenedores se comunicaran con los de otros hosts, y viceversa, haría una petición al nodo maestro, que le indicaría la subred en la que tiene que lanzar sus contenedores, así como una lista de las direcciones IP del resto de nodos en la red, así como la subred en la que están los contenedores en cada uno de esos nodos.
+Una forma de generalizar esto sería utilizar un nodo maestro, que podría ser uno de los hosts que queremos comunicar u otra máquina, la dirección IP de este nodo tendría que ser conocida por todos. Cuando un host quisiera incorporarse a la red, y permitir que sus contenedores se comunicaran con los de otros hosts, y viceversa, haría una petición al nodo maestro, que le indicaría la subred en la que tiene que lanzar sus contenedores, así como una lista de las direcciones IP del resto de nodos en la red, y la subred en la que están los contenedores en cada uno de esos nodos.
 
 Esto implicaría que el nodo maestro tuviera que mantener esa lista de direcciones IP de los hosts y las subredes para sus contenedores, también que cada vez que un host se incorpore a la red sería necesario informar a todos los nodos de la IP y subred de los contenedores del nuevo host, con lo cual los nodos también tendrían que permanecer en espera de esas atualizaciones mientras sigan formando parte del sistema.
 
