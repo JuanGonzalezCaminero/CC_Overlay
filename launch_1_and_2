@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#Disable iptables calls from bridges
+echo 0 > /proc/sys/net/bridge/bridge-nf-call-iptables 
+
 #Clean previous containers
 docker container stop ubuntu_1
 docker container rm ubuntu_1
@@ -17,6 +20,7 @@ docker container ls
 #Clean previous namespaces
 ip netns delete container_1
 ip netns delete container_2
+ip netns delete bridge_0
 
 #Add a namespace for each container in the netns folder by adding a symlink in that 
 #folder to the network namespace of each container
@@ -25,68 +29,82 @@ container_pid="$(docker inspect ubuntu_1 -f '{{.State.Pid}}')"
 ln -sf /proc/$container_pid/ns/net /var/run/netns/container_1
 container_pid="$(docker inspect ubuntu_2 -f '{{.State.Pid}}')"
 ln -sf /proc/$container_pid/ns/net /var/run/netns/container_2
+
+ip netns add bridge_0
 #ip netns add container_1
 #ip netns add container_2
 
 #Output changes
-echo -e "\e[30;48;5;87m \e[1m "Created network namespaces for each container"\x1b[K\e[0m"
+echo -e "\e[30;48;5;87m \e[1m "Created network namespaces for each container and for the bridge"\x1b[K\e[0m"
 ip netns list
 
-#Clean host interfaces
-ip link del veth1
-ip link del veth2
+#Create bridge
+ip link add name br0 netns bridge_0 type bridge
+ip netns exec bridge_0 ip link set br0 up
 
-#Add a veth link between the container namespaces
-ip link add veth1 netns container_1 type veth peer name veth1 netns container_2
-#Add veth links between each container and the host
-ip link add veth0 netns container_1 type veth peer name veth1
-ip link add veth0 netns container_2 type veth peer name veth2
+#Clean interfaces in host namespace
+ip link del veth0
+
+#Create veth links
+#Between the containers and the bridge
+ip link add veth0 netns container_1 type veth peer name br0veth0 netns bridge_0
+ip link add veth0 netns container_2 type veth peer name br0veth1 netns bridge_0
+#Between the bridge and the host
+ip link add veth0 type veth peer name br0veth2 netns bridge_0
+
+#Assign the interfaces to the bridge
+ip netns exec bridge_0 ip link set br0veth0 master br0
+ip netns exec bridge_0 ip link set br0veth1 master br0
+ip netns exec bridge_0 ip link set br0veth2 master br0
 
 #Output changes
-echo -e "\e[30;48;5;87m \e[1m "Created veth links between containers and with the host"\x1b[K\e[0m"
+echo -e "\e[30;48;5;87m \e[1m "Created bridge and veth links with the containers and with the host"\x1b[K\e[0m"
 echo -e "\e[30;48;5;209m \e[1m "Host:"\x1b[K\e[0m"
-ip addr show dev veth1
-ip addr show dev veth2
+ip addr show dev veth0
 echo -e "\e[30;48;5;209m \e[1m "Container 1:"\x1b[K\e[0m"
 ip netns exec container_1 ip addr show dev veth0
-ip netns exec container_1 ip addr show dev veth1
 echo -e "\e[30;48;5;209m \e[1m "Container 2:"\x1b[K\e[0m"
 ip netns exec container_2 ip addr show dev veth0
-ip netns exec container_2 ip addr show dev veth1
+echo -e "\e[30;48;5;209m \e[1m "Bridge:"\x1b[K\e[0m"
+ip netns exec bridge_0 bridge link show master br0
 
 #Assign an IP address to each interface
-#Between containers
-ip netns exec container_1 ip address add 192.168.1.1/24 dev veth1 
-ip netns exec container_2 ip address add 192.168.1.2/24 dev veth1
-#With the host
+#In the containers
 ip netns exec container_1 ip address add 192.168.2.1/24 dev veth0 
-ip netns exec container_2 ip address add 192.168.3.1/24 dev veth0 
+ip netns exec container_2 ip address add 192.168.2.2/24 dev veth0
 #In the host
-ip address add 192.168.2.2/24 dev veth1
-ip address add 192.168.3.2/24 dev veth2
+ip address add 192.168.2.3/24 dev veth0
 
 #Activate the interfaces
 ip netns exec container_1 ip link set dev veth0 up
-ip netns exec container_1 ip link set dev veth1 up
 ip netns exec container_2 ip link set dev veth0 up
-ip netns exec container_2 ip link set dev veth1 up
-ip link set dev veth1 up
-ip link set dev veth2 up
+ip link set dev veth0 up
+ip netns exec bridge_0 ip link set dev br0veth0 up
+ip netns exec bridge_0 ip link set dev br0veth1 up
+ip netns exec bridge_0 ip link set dev br0veth2 up
 
 #Output changes
 echo -e "\e[30;48;5;87m \e[1m "Activated the interfaces and assigned addresses"\x1b[K\e[0m"
 echo -e "\e[30;48;5;209m \e[1m "Host:"\x1b[K\e[0m"
-ip addr show dev veth1
-ip addr show dev veth2
+ip addr show dev veth0
 echo -e "\e[30;48;5;209m \e[1m "Container 1:"\x1b[K\e[0m"
 ip netns exec container_1 ip addr show dev veth0
-ip netns exec container_1 ip addr show dev veth1
 echo -e "\e[30;48;5;209m \e[1m "Container 2:"\x1b[K\e[0m"
 ip netns exec container_2 ip addr show dev veth0
-ip netns exec container_2 ip addr show dev veth1
+echo -e "\e[30;48;5;209m \e[1m "Bridge:"\x1b[K\e[0m"
+ip netns exec bridge_0 ip addr show dev br0veth0
+ip netns exec bridge_0 ip addr show dev br0veth1
+ip netns exec bridge_0 ip addr show dev br0veth2
+
+#Add the host as default gateway for the containers
+ip netns exec container_1 ip route add default via 192.168.2.3 dev veth0
+ip netns exec container_2 ip route add default via 192.168.2.3 dev veth0
+
+ip route add 192.168.2.0/24 via 192.168.2.3 dev veth0
+#ip route add 192.168.3.0/24 via 192.168.4.1 dev veth0
 
 #Show routing tables
-echo -e "\e[30;48;5;87m \e[1m "Routing tables"\x1b[K\e[0m"
+echo -e "\e[30;48;5;87m \e[1m "Set the host as the default gateway for the containers"\x1b[K\e[0m"
 echo -e "\e[30;48;5;209m \e[1m "Host:"\x1b[K\e[0m"
 ip route
 echo -e "\e[30;48;5;209m \e[1m "Container 1:"\x1b[K\e[0m"
@@ -96,23 +114,23 @@ ip netns exec container_2 ip route
 
 #Test connectivity
 echo -e "\e[30;48;5;87m \e[1m "Connectivity test"\x1b[K\e[0m"
-echo -e "\e[30;48;5;209m \e[1m "Container 1 - Container 2 \(192.168.1.2\)"\x1b[K\e[0m"
-docker container exec ubuntu_1 ping -c 4 192.168.1.2
-
-echo -e "\e[30;48;5;209m \e[1m "Container 2 - Container 1 \(192.168.1.1\)"\x1b[K\e[0m"
-docker container exec ubuntu_2 ping -c 4 192.168.1.1
-
-echo -e "\e[30;48;5;209m \e[1m "Container 1 - Host \(192.168.2.2\)"\x1b[K\e[0m"
+echo -e "\e[30;48;5;209m \e[1m "Container 1 - Container 2 \(192.168.2.2\)"\x1b[K\e[0m"
 docker container exec ubuntu_1 ping -c 4 192.168.2.2
+
+echo -e "\e[30;48;5;209m \e[1m "Container 2 - Container 1 \(192.168.2.1\)"\x1b[K\e[0m"
+docker container exec ubuntu_2 ping -c 4 192.168.2.1
+
+echo -e "\e[30;48;5;209m \e[1m "Container 1 - Host \(192.168.2.3\)"\x1b[K\e[0m"
+docker container exec ubuntu_1 ping -c 4 192.168.2.3
 
 echo -e "\e[30;48;5;209m \e[1m "Host - Container 1 \(192.168.2.1\)"\x1b[K\e[0m"
 ping -c 4 192.168.2.1
 
-echo -e "\e[30;48;5;209m \e[1m "Container 2 - Host \(192.168.3.2\)"\x1b[K\e[0m"
-docker container exec ubuntu_2 ping -c 4 192.168.3.2
+echo -e "\e[30;48;5;209m \e[1m "Container 2 - Host \(192.168.2.3\)"\x1b[K\e[0m"
+docker container exec ubuntu_2 ping -c 4 192.168.2.3
 
-echo -e "\e[30;48;5;209m \e[1m "Host - Container 2 \(192.168.3.1\)"\x1b[K\e[0m"
-ping -c 4 192.168.3.1
+echo -e "\e[30;48;5;209m \e[1m "Host - Container 2 \(192.168.2.2\)"\x1b[K\e[0m"
+ping -c 4 192.168.2.2
 
 
 
