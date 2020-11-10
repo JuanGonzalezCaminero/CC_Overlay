@@ -25,7 +25,7 @@ La solución se basa en el uso de un bridge virtual al que se conecten los conte
 
 En este ejemplo, se lanzan dos contenedores, por tanto, tendremos tres espacios de nombres de red, dos para los contenedores y uno para el bridge. Se crean enlaces VETH entre cada uno de los contenedores y el bridge, y se asignan direcciones IP (en la misma subred) a las interfaces de los contenedores. Este esquema muestra las conexiones resultantes y dirección IP de cada interfaz:
 
- <img src="Images/parte_1.png" width="500" />
+ <img src="Images/parte_1.png" width="800" />
 
 El script que lanza este escenario es launch_1.
 
@@ -38,7 +38,7 @@ La solución parte de lo descrito anteriormente. Los cambios son pocos, ya que l
 
 A continuación se muestra el sistema descrito:
 
-<img src="Images/parte_2.png" width="500" />
+<img src="Images/parte_2.png" width="800" />
 
 El script que lanza este escenario es launch_2.
 
@@ -79,7 +79,7 @@ En el escenario que despliega el script, se redirigen los puertos 8000 y 8080 de
 
 Este es el esquema del sistema descrito:
 
-<img src="Images/parte_3.png" width="500" />
+<img src="Images/parte_3.png" width="800" />
 
 El script que lanza este escenario es launch_3.
 
@@ -98,7 +98,7 @@ Los scripts que lanzan este escenario son launch_4_host1 y launch_4_host2. Es re
 
 Este es el esquema del sistema descrito:
 
-<img src="Images/parte_4.png" width="500" />
+<img src="Images/parte_4.png" width="800" />
 
 Una forma de generalizar esto sería utilizar un nodo maestro, que podría ser uno de los hosts que queremos comunicar u otra máquina, la dirección IP de este nodo tendría que ser conocida por todos. Cuando un host quisiera incorporarse a la red, y permitir que sus contenedores se comunicaran con los de otros hosts, y viceversa, haría una petición al nodo maestro, que le indicaría la subred en la que tiene que lanzar sus contenedores, así como una lista de las direcciones IP del resto de nodos en la red, así como la subred en la que están los contenedores en cada uno de esos nodos.
 
