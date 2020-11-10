@@ -36,10 +36,41 @@ A continuación se muestra el sistema descrito:
 
 <img src="Images/parte_2.jpg" width="500" />
 
+El script que lanza este escenario es launch_2.
+
 ### Parte 3
 El objetivo de esta sección es ampliar el escenario anterior para permitir comunicaciones entre los contenedores y cualquier nodo alcanzable por el host.
 
+Para conseguir esto, propongo un escenario donde el host actúa como un router entre los contenedores y el exterior, para hacer esto, se usa el paquete iptables. 
 
+Se crea una regla en la cadena POSTROUTING de la tabla de nat para que cuando el host reciba una comunicación desde uno de los contenedores, cambie su dirección de orígen a la IP de su interfaz externa, y un puerto concreto, y viceversa cuando reciba un mensaje del exterior en ese puerto, cambiando su dirección de destino a la del contenedor correspondiente.
+
+En la cadena FORWARD de la tabla de filter se añaden dos reglas, una para aceptar paquetes que pertenezcan a una conexión establecida o que estén estableciendo una conexión, y otra para aceptar paquetes que entren desde la interfaz interna del host, la que se conecta con los contenedores, y salgan por la interfaz externa del host.
+
+Las reglas son las siguientes:
+`iptables -t nat -A POSTROUTING -o interfaz_externa -j MASQUERADE`
+`iptables -t filter -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT`
+`iptables -t filter -A FORWARD -i veth0 -o interfaz_externa -j ACCEPT`
+
+Se toma como interfaz externa del host la que aparezca como gateway por defecto al usar el comando `ip route`
+
+Además de estas reglas, es necesario establecer al host como gateway por defecto para los contenedores, de forma que cualquier mensaje dirigido a una dirección fuera de su subred se envíe a la interfaz interna del host, desde donde se redirige a su destino.
+
+Una vez hecho esto, los contenedores pueden comunicarse con cualquier nodo alcanzable desde el host si son ellos los que inician la comunicación, sin embargo, desde otras máquinas no es posible alcanzar los contenedores. Una solución para hacer esto posible es el port forwarding, establecemos una serie de puertos en la interfaz externa del host que se redirigirán a los contenedores. 
+
+De nuevo, hacemos esto usando iptables. Para cada puerto del host que queramos redirigir a un contenedor son necesarias dos reglas, una, en la cadena PREROUTING de la tabla de nat, que cambie la dirección de destino de los mensajes dirigidos al puerto en concreto a la ip y puerto del contenedor que queramos:
+`iptables -A PREROUTING -t nat -i interfaz_externa -p protocolo --dport puerto_host -j DNAT --to ip_contenedor:puerto_contenedor`
+La segunda regla, en la cadena FORWARD de la tabla filter, acepta paquetes dirigidos a la IP y puerto del contenedor:
+`iptables -A FORWARD -p protocolo -d ip_contenedor --dport puerto_contenedor -j ACCEPT`
+
+En el escenario que despliega el script, se redirigen los puertos 8000 y 8080 del host al puerto 80 de los contenedores 1 y 2 respectivamente, permitiendo que desde una máquina externa se acceda a la página de inicio del servidor nginx instalado en los contenedores.
+
+El script que lanza este escenario es launch_3.
+
+### Parte 4
+El objetivo de esta sección es permitir la comunicación entre contenedores desplegados en distintas máquinas a través de protocolos IP. Se parte de un escenario similar al descrito en la parte 3, aunque sin el port forwarding, ya que no es necesario para este ejemplo.
+
+Una solución no generalizada, como la que despliega el script, implica pocos cambios. Asumiendo que conocemos la subred en la que están los contenedores en cada host, y la IP de todos los hosts que queremos conectar, la solución es tan sencilla como añadir una regla de rutado usando `ip route` en cada uno de los hosts, indicando en cada caso la subred que queremos alcanzar y la IP del host donde están esos contenedores:
 
 
 
