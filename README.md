@@ -109,7 +109,6 @@ Esto implicaría que el nodo maestro tuviera que mantener esa lista de direccion
 <a name="english"/>
 
 ## Description and usage
-### Part 1
 
 All the scripts in this repository use the container image juangonzalezcaminero/ubuntu_practica hosted at https://hub.docker.com/. The scripts automatically download this image, though, in case this failed for any reason, it would be necessary to manually download it and tag it as ubuntu_practica in order to execute the scripts.
 
@@ -121,7 +120,7 @@ Lastly, each script launches the example scenario associated to each of the part
 
 # 
 
-### Parte 1
+### Part 1
 This section's goal is to provide a way for the containers on a host to communicate trough IP protocols.
 
 The solution is based on the use of a virtual bridge to which the containers we want to communicate will be connected, this will be done using the package iproute2.
