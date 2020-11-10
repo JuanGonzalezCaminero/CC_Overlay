@@ -230,3 +230,4 @@ echo -e "\e[30;48;5;87m \e[1m "HTTP requests to the host\'s IP on ports 8000 and
 #change-the-background-color-for-exactly-one-line (2nd answer)
 #echo -e "\e[30;48;5;87m \e[1m     "$size" "$pyramid" "$iter" "$iters_per_copy"\x1b[K\e[0m"
 
+
