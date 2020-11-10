@@ -116,107 +116,28 @@ ip netns exec container_1 ip route
 echo -e "\e[30;48;5;209m \e[1m "Container 2:"\x1b[K\e[0m"
 ip netns exec container_2 ip route
 
-#Start iptables (ONLY SYSTEMD)
-systemctl start iptables
+#Test connectivity
+echo -e "\e[30;48;5;87m \e[1m "Connectivity test"\x1b[K\e[0m"
+echo -e "\e[30;48;5;209m \e[1m "Container 1 - Container 2 \(192.168.2.2\)"\x1b[K\e[0m"
+docker container exec ubuntu_1 ping -c 4 192.168.2.2
 
-#Enable forwarding in the kernel
-echo 1 > /proc/sys/net/ipv4/ip_forward
+echo -e "\e[30;48;5;209m \e[1m "Container 2 - Container 1 \(192.168.2.1\)"\x1b[K\e[0m"
+docker container exec ubuntu_2 ping -c 4 192.168.2.1
 
-#Reset all iptables rules to default
-#If no other table is specified, iptables commands affect the filter table
-iptables -t filter -F INPUT
-iptables -t filter -F FORWARD
-iptables -t filter -F OUTPUT
-#iptables -t filter -X
-iptables -t nat -F PREROUTING
-iptables -t nat -F INPUT
-iptables -t nat -F OUTPUT
-iptables -t nat -F POSTROUTING
-#iptables -t nat -X
-iptables -t mangle -F PREROUTING
-iptables -t mangle -F INPUT
-iptables -t mangle -F OUTPUT
-iptables -t mangle -F POSTROUTING
-iptables -t mangle -F FORWARD
-#iptables -t mangle -X
-iptables -t raw -F PREROUTING
-iptables -t raw -F OUTPUT
-#iptables -t raw -X
-iptables -t security -F INPUT
-iptables -t security -F FORWARD
-iptables -t security -F OUTPUT
-#iptables -t security -X
-iptables -P INPUT ACCEPT
-iptables -P FORWARD ACCEPT
-iptables -P OUTPUT ACCEPT
+echo -e "\e[30;48;5;209m \e[1m "Container 1 - Host \(192.168.2.3\)"\x1b[K\e[0m"
+docker container exec ubuntu_1 ping -c 4 192.168.2.3
 
-#Show default tables
-echo -e "\e[30;48;5;87m \e[1m "Reset all iptables default tables"\x1b[K\e[0m"
-echo -e "\e[30;48;5;209m \e[1m "Filter table:"\x1b[K\e[0m"
-iptables -vL -t filter
-echo -e "\e[30;48;5;209m \e[1m "Nat table:"\x1b[K\e[0m"
-iptables -vL -t nat
+echo -e "\e[30;48;5;209m \e[1m "Host - Container 1 \(192.168.2.1\)"\x1b[K\e[0m"
+ping -c 4 192.168.2.1
 
-#Get the name of the interface connected to the default gateway
-external=$(ip r | grep default -m 1 | grep -e"dev [^ ]*" -o | cut -c 5-)
+echo -e "\e[30;48;5;209m \e[1m "Container 2 - Host \(192.168.2.3\)"\x1b[K\e[0m"
+docker container exec ubuntu_2 ping -c 4 192.168.2.3
 
-#Establish rules that make the host a router, forwarding packets between the internal interface 
-#connected to the virtual bridge and its external interface
-iptables -t nat -A POSTROUTING -o $external -j MASQUERADE
-iptables -t filter -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-iptables -t filter -A FORWARD -i veth0 -o $external -j ACCEPT
+echo -e "\e[30;48;5;209m \e[1m "Host - Container 2 \(192.168.2.2\)"\x1b[K\e[0m"
+ping -c 4 192.168.2.2
 
-#Show modified tables
-echo -e "\e[30;48;5;87m \e[1m "Established forwarding rules"\x1b[K\e[0m"
-echo -e "\e[30;48;5;209m \e[1m "Filter table:"\x1b[K\e[0m"
-iptables -vL -t filter
-echo -e "\e[30;48;5;209m \e[1m "Nat table:"\x1b[K\e[0m"
-iptables -vL -t nat
 
-#Prompt for IP of second host
-echo -e "\e[30;48;5;87m \e[1m "Please input the IP of the other host"\x1b[K\e[0m"
-read remote_host
 
-#Add the route for the two containers in the second host. The subnet for those containers 
-#is hardcoded in this non-generic version of the solution
-ip route del 192.168.3.0/24
-ip route add 192.168.3.0/24 via $remote_host dev $external
-
-#Show routing tables
-echo -e "\e[30;48;5;87m \e[1m "Added route to the container\'s subnet in the second host"\x1b[K\e[0m"
-echo -e "\e[30;48;5;209m \e[1m "Host:"\x1b[K\e[0m"
-ip route
-echo -e "\e[30;48;5;209m \e[1m "Container 1:"\x1b[K\e[0m"
-ip netns exec container_1 ip route
-echo -e "\e[30;48;5;209m \e[1m "Container 2:"\x1b[K\e[0m"
-ip netns exec container_2 ip route
-
-#Test outward connectivity
-echo -e "\e[30;48;5;87m \e[1m "Outward connectivity test"\x1b[K\e[0m"
-echo -e "\e[30;48;5;209m \e[1m "Container 1 - google.com"\x1b[K\e[0m"
-docker container exec ubuntu_1 ping -c 4 google.com
-
-echo -e "\e[30;48;5;209m \e[1m "Container 2 - google.com"\x1b[K\e[0m"
-docker container exec ubuntu_2 ping -c 4 google.com
-
-echo -e "\e[30;48;5;209m \e[1m "Container 1 - wikipedia.com"\x1b[K\e[0m"
-docker container exec ubuntu_1 ping -c 4 wikipedia.com
-
-echo -e "\e[30;48;5;209m \e[1m "Container 2 - wikipedia.com"\x1b[K\e[0m"
-docker container exec ubuntu_2 ping -c 4 wikipedia.com
-
-echo -e "\e[30;48;5;87m \e[1m "Container connectivity test"\x1b[K\e[0m"
-echo -e "\e[30;48;5;209m \e[1m "Container 1, Host 1 - Container 1, Host 2 \(192.168.3.1\)"\x1b[K\e[0m"
-docker container exec ubuntu_1 ping -c 4 192.168.3.1
-
-echo -e "\e[30;48;5;209m \e[1m "Container 1, Host 1 - Container 2, Host 2 \(192.168.3.1\)"\x1b[K\e[0m"
-docker container exec ubuntu_1 ping -c 4 192.168.3.2
-
-echo -e "\e[30;48;5;209m \e[1m "Container 2, Host 1 - Container 1, Host 2 \(192.168.3.1\)"\x1b[K\e[0m"
-docker container exec ubuntu_2 ping -c 4 192.168.3.1
-
-echo -e "\e[30;48;5;209m \e[1m "Container 2, Host 1 - Container 2, Host 2 \(192.168.3.1\)"\x1b[K\e[0m"
-docker container exec ubuntu_2 ping -c 4 192.168.3.2
 
 
 

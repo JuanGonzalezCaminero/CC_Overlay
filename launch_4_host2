@@ -3,6 +3,10 @@
 #Disable iptables calls from bridges
 echo 0 > /proc/sys/net/bridge/bridge-nf-call-iptables 
 
+#Pull image from the dockerhub
+docker pull juangonzalezcaminero/ubuntu_practica
+docker tag juangonzalezcaminero/ubuntu_practica ubuntu_practica
+
 #Clean previous containers
 docker container stop ubuntu_1
 docker container rm ubuntu_1
