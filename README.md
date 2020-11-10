@@ -27,7 +27,7 @@ En este ejemplo, se lanzan dos contenedores, por tanto, tendremos tres espacios 
 
 El script que lanza este escenario es launch_1.
 
-#---
+<hr style="border:2px solid gray"> </hr>
 
 ### Parte 2
 El objetivo de esta sección es ampliar el escenario anterior para permitir comunicaciones entre los contenedores y el host.
