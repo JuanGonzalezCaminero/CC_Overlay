@@ -14,6 +14,7 @@ Esta imágen parte de la imágen de ubuntu, y añade los paquetes iputils-ping, 
 
 Todos los contenedores que se lanzan en estos scripts utilizan la opción --network none, es decir, en el momento de su creación docker no crea una interfaz virtual para el contenedor, por lo que no tienen ninguna forma de comunicarse con el exterior a través de protocolos IP.
 
+Por último, cada uno de los scripts lanza el escenario de ejemplo asociado a cada una de las partes descritas en este readme. Los scripts se deben ejecutar con permisos de superusuario para que puedan realizar las operaciones necesarias con iproute2. Los scripts realizan de forma automática una serie de pruebas para comprobar el correcto funcionamiento del escenario, pero en algunos casos en los que no sea posible hacer estas comprobaciones desde la misma máquina que ejecuta el script se indicará al usuario lo que se ha de hacer para comprobar que el comportamiento del sistema desplegado es el esperado.
 
 ### Parte 1
 El objetivo de esta sección es proporcionar una forma de que los contenedores lanzados en un mismo host se pueden comunicar entre sí con protocolos IP. 
@@ -24,7 +25,24 @@ En este ejemplo, se lanzan dos contenedores, por tanto, tendremos tres espacios 
 
  <img src="Images/parte_1.jpg" width="500" />
 
-El script que lanza este escenario 
+El script que lanza este escenario es launch_1.
+
+### Parte 2
+El objetivo de esta sección es ampliar el escenario anterior para permitir comunicaciones entre los contenedores y el host.
+
+La solución parte de lo descrito anteriormente. Los cambios son pocos, ya que lo único que se necesita es crear un enlace VETH entre el host y el bridge, y asignar una dirección IP a la interfaz VETH en el host. En este caso, esta interfaz se crea en el espacio de nombres de red del host, y la subred que se usa para la dirección IP es la misma que para los contenedores (192.168.2.0/24).
+
+A continuación se muestra el sistema descrito:
+
+<img src="Images/parte_2.jpg" width="500" />
+
+### Parte 3
+El objetivo de esta sección es ampliar el escenario anterior para permitir comunicaciones entre los contenedores y cualquier nodo alcanzable por el host.
+
+
+
+
+
 
 ---
 
@@ -32,3 +50,18 @@ El script que lanza este escenario
 
 ## Description and usage
 ### Part 1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
