@@ -133,16 +133,16 @@ This scenario is launched by the script launch_1.
 
 # 
 
-### Parte 2
-El objetivo de esta sección es ampliar el escenario anterior para permitir comunicaciones entre los contenedores y el host.
+### Part 2
+This section's goal is to extend the previous scenario to allow for communications between the containers and the host.
 
-La solución parte de lo descrito anteriormente. Los cambios son pocos, ya que lo único que se necesita es crear un enlace VETH entre el host y el bridge, y asignar una dirección IP a la interfaz VETH en el host. En este caso, esta interfaz se crea en el espacio de nombres de red del host, y la subred que se usa para la dirección IP es la misma que para los contenedores (192.168.2.0/24).
+The solution starts from the previous one. The changes are few, as the only thing that is needed is to create a VETH link between the host and the bridge, and to assign an IP address to the VETH interface on the host. In this case, this interface is created on the host's network namespace, and the subnet that is used for the IP is the same as for the containers (192.168.2.0/24)
 
-A continuación se muestra el sistema descrito:
+This is the described system:
 
 <img src="Images/parte_2.png" width="100%" />
 
-El script que lanza este escenario es launch_2.
+This scenario is launched by the script launch_2.
 
 # 
 
